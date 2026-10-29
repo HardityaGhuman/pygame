@@ -149,77 +149,90 @@ class TreasureEncounter(Encounter):
 
 
 class RedWizardEncounter(Encounter):
-    """Rock Paper Scissors Lizard Spock against the Red Wizard.
+    """A spell battle against the Red Wizard.
 
-    A draw replays the round. Player win -> CONTINUE, wizard win -> END.
+    Each spell beats two others and loses to two. A draw replays the round.
+    Player wins -> the wizard is vanquished and the game CONTINUEs.
+    Wizard wins -> the player is vanquished and the game ENDs.
     """
 
     wizard_name = "Red Wizard"
 
-    # Each move maps to the moves it beats
+    # Each spell maps to the spells it beats
     game_rules = {
-        "rock": ["scissors", "lizard"],
-        "paper": ["rock", "spock"],
-        "scissors": ["paper", "lizard"],
-        "lizard": ["spock", "paper"],
-        "spock": ["rock", "scissors"],
+        "Fireball": ["Ice Shard", "Lightning Bolt"],
+        "Ice Shard": ["Wind Gust", "Earthquake"],
+        "Wind Gust": ["Lightning Bolt", "Fireball"],
+        "Lightning Bolt": ["Earthquake", "Ice Shard"],
+        "Earthquake": ["Fireball", "Wind Gust"],
     }
 
-    # (winner, loser) -> how the winner beats the loser
+    # (winning spell, losing spell) -> how the winner overpowers the loser
     win_verbs = {
-        ("scissors", "lizard"): "decapitate",
-        ("scissors", "paper"): "cuts",
-        ("paper", "rock"): "covers",
-        ("rock", "lizard"): "crushes",
-        ("lizard", "spock"): "poisons",
-        ("spock", "scissors"): "smashes",
-        ("lizard", "paper"): "eats",
-        ("paper", "spock"): "disproves",
-        ("spock", "rock"): "vaporizes",
-        ("rock", "scissors"): "crushes",
+        ("Fireball", "Ice Shard"): "melts",
+        ("Fireball", "Lightning Bolt"): "consumes",
+        ("Ice Shard", "Wind Gust"): "freezes",
+        ("Ice Shard", "Earthquake"): "seals the cracks of",
+        ("Wind Gust", "Lightning Bolt"): "scatters",
+        ("Wind Gust", "Fireball"): "snuffs out",
+        ("Lightning Bolt", "Earthquake"): "splits",
+        ("Lightning Bolt", "Ice Shard"): "shatters",
+        ("Earthquake", "Fireball"): "buries",
+        ("Earthquake", "Wind Gust"): "grounds",
     }
 
-    def get_player_move(self):
-        """Show the moves and return a valid one (number or name, any case)."""
-        moves = list(self.game_rules)
-        print("\nChoose your move:")
-        for number, move in enumerate(moves, start=1):
-            print(f"  {number}. {move.title()}")
+    def get_player_spell(self):
+        """Show the spells and return a valid one (number or name, any case)."""
+        spells = list(self.game_rules)
+        # Lower-case lookup so "ice shard", "ICE  SHARD" etc. all match "Ice Shard"
+        by_name = {spell.lower(): spell for spell in spells}
+
+        print("\nYour spellbook:")
+        for number, spell in enumerate(spells, start=1):
+            print(f"  {number}. {spell}")
 
         while True:
-            text = input(f"Your move (1-{len(moves)} or name): ").strip().lower()
-            if text.isdigit() and 1 <= int(text) <= len(moves):
-                return moves[int(text) - 1]
-            if text in self.game_rules:
-                return text
-            print(f"  '{text}' is not a valid move. Try again.")
+            raw = input(f"Cast a spell (1-{len(spells)} or name): ")
+            text = " ".join(raw.split()).lower()  # trim and collapse spaces
+            if text.isdigit() and 1 <= int(text) <= len(spells):
+                return spells[int(text) - 1]
+            if text in by_name:
+                return by_name[text]
+            print(f"  '{raw.strip()}' is not a spell you know. Try again.")
 
     def describe_win(self, winner, loser):
-        """Return a line like 'Paper covers Rock'."""
-        verb = self.win_verbs.get((winner, loser), "beats")
-        return f"{winner.title()} {verb} {loser.title()}"
+        """Return a line like 'Fireball melts Ice Shard'."""
+        verb = self.win_verbs.get((winner, loser), "overpowers")
+        return f"{winner} {verb} {loser}"
 
     def run_encounter(self):
-        print(f"The {self.wizard_name} blocks your path and challenges you!")
+        print(f"The {self.wizard_name} raises a staff crackling with power.")
+        print("A spell battle begins!")
+        round_number = 1
         while True:
-            player_move = self.get_player_move()
-            wizard_move = random.choice(list(self.game_rules))
-            print(f"\n  You:  {player_move.title()}")
-            print(f"  {self.wizard_name}: {wizard_move.title()}")
+            print(f"\n--- Round {round_number} ---")
+            player_spell = self.get_player_spell()
+            wizard_spell = random.choice(list(self.game_rules))
+            # Pad both labels to the same width so the spell names line up
+            wizard_label = f"The {self.wizard_name} casts:"
+            width = len(wizard_label)
+            print(f"\n  {'You cast:':<{width}} {player_spell}")
+            print(f"  {wizard_label} {wizard_spell}")
 
-            if player_move == wizard_move:
-                # Draw: loop back and play the round again
-                print("  A draw! The duel continues...")
+            if player_spell == wizard_spell:
+                # Draw: the spells cancel out, so play another round
+                print("  The spells collide and cancel out!")
+                round_number += 1
                 continue
 
-            if wizard_move in self.game_rules[player_move]:
-                # The player's move beats the wizard's move
-                print(f"  {self.describe_win(player_move, wizard_move)}.")
+            if wizard_spell in self.game_rules[player_spell]:
+                # The player's spell beats the wizard's spell
+                print(f"  {self.describe_win(player_spell, wizard_spell)}!")
                 print(f"\nThe {self.wizard_name} has been vanquished from this castle!")
                 return EncounterOutcome.CONTINUE
 
-            # Otherwise the wizard's move beats the player's move
-            print(f"  {self.describe_win(wizard_move, player_move)}.")
+            # Otherwise the wizard's spell beats the player's spell
+            print(f"  {self.describe_win(wizard_spell, player_spell)}!")
             print("\nYou have been vanquished from this castle!")
             return EncounterOutcome.END
 
@@ -281,7 +294,9 @@ class Castle:
             print("The castle is empty.")
             return EncounterOutcome.END
 
-        print(f"\nYou open door {door} and step into the {room.name}.")
+        # Avoid "the The Red Wizard's Lair" for names that already start with "The"
+        place = room.name if room.name.startswith("The ") else f"the {room.name}"
+        print(f"\nYou open door {door} and step into {place}.")
         print("=" * 50)
         outcome = room.visit_room()
         print("=" * 50)
