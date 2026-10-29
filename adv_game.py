@@ -5,7 +5,8 @@ Encounter, which returns an EncounterOutcome telling the game whether to keep
 going (CONTINUE) or stop (END).
 
 To add a new kind of encounter: subclass Encounter, implement run_encounter,
-and add a Room that uses it to the `rooms` list.
+and add a Room that uses it to the `rooms` list. For a new wizard, subclass
+SpellBattleEncounter and set only `wizard_name`, `game_rules` and `win_verbs`.
 """
 
 import random
@@ -245,20 +246,23 @@ class RedWizardEncounter(SpellBattleEncounter):
 
 
 class BlueWizardEncounter(SpellBattleEncounter):
-    """Three-option battle using Rock Paper Scissors rules."""
+    """Three-spell battle using Rock Paper Scissors rules.
+
+    Stone Golem = rock, Binding Scroll = paper, Spectral Blade = scissors.
+    """
 
     wizard_name = "Blue Wizard"
 
     game_rules = {
-        "Rock": ["Scissors"],
-        "Paper": ["Rock"],
-        "Scissors": ["Paper"],
+        "Stone Golem": ["Spectral Blade"],
+        "Binding Scroll": ["Stone Golem"],
+        "Spectral Blade": ["Binding Scroll"],
     }
 
     win_verbs = {
-        ("Scissors", "Paper"): "cuts",
-        ("Paper", "Rock"): "covers",
-        ("Rock", "Scissors"): "crushes",
+        ("Spectral Blade", "Binding Scroll"): "slices through",
+        ("Binding Scroll", "Stone Golem"): "binds",
+        ("Stone Golem", "Spectral Blade"): "shatters",
     }
 
 
