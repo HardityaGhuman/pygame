@@ -49,6 +49,18 @@ game_results = {
 # Game logic
 # ---------------------------------------------------------------------------
 
+def parse_choice(user_input):
+    """Turn a number or a name into a choice name, or return None if invalid.
+
+    The number is converted to its name *before* validation, so both
+    "3" and "Scissors" end up as "scissors" and go through the same check.
+    """
+    text = user_input.strip().lower()
+    if text.isdigit():
+        text = game_options.get(int(text), "")  # out-of-range number -> invalid
+    return text if text in game_rules else None
+
+
 def get_user_input():
     """Show the menu and return the player's choice name."""
     print("\nChoose your move:")
@@ -56,11 +68,22 @@ def get_user_input():
         print(f"  {number}. {name.capitalize()}")
 
     while True:
-        user_input = input("Enter a number (1-5): ").strip()
-        # Only accept digits that are actual menu keys, so we never hit a KeyError
-        if user_input.isdigit() and int(user_input) in game_options:
-            return game_options[int(user_input)]
-        print(f"Invalid choice '{user_input}'. Please pick a number from 1 to 5.")
+        user_input = input(f"Enter a number (1-{len(game_options)}) or a name: ")
+        choice = parse_choice(user_input)
+        if choice:
+            return choice
+        print(f"Invalid choice '{user_input.strip()}'. Try again.")
+
+
+def ask_play_again():
+    """Return True if the player wants another round."""
+    while True:
+        answer = input("Play again? (y/n): ").strip().lower()
+        if answer in ("y", "yes"):
+            return True
+        if answer in ("n", "no"):
+            return False
+        print("Please answer 'y' or 'n'.")
 
 
 def get_computer_input():
@@ -88,11 +111,19 @@ def display_game_results(user_choice, computer_choice, result):
 
 def main():
     print("Welcome to Rock Paper Scissors Lizard Spock!")
-    user_choice = get_user_input()
-    computer_choice = get_computer_input()
-    result = get_game_results(user_choice, computer_choice)
-    display_game_results(user_choice, computer_choice, result)
+    while True:
+        user_choice = get_user_input()
+        computer_choice = get_computer_input()
+        result = get_game_results(user_choice, computer_choice)
+        display_game_results(user_choice, computer_choice, result)
+        if not ask_play_again():
+            break
+    print("Thanks for playing!")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except (KeyboardInterrupt, EOFError):
+        # Ctrl+C / Ctrl+D: exit cleanly instead of showing a traceback
+        print("\nGoodbye!")
