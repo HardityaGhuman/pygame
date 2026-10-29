@@ -139,6 +139,91 @@ class DefaultEncounter(Encounter):
         return EncounterOutcome.CONTINUE
 
 
+class TreasureEncounter(Encounter):
+    """The win condition: finding the treasure ends the game."""
+
+    def run_encounter(self):
+        print("Gold coins and jewels glitter in the torchlight.")
+        print("*** You found the treasure! You have won the game! ***")
+        return EncounterOutcome.END
+
+
+class RedWizardEncounter(Encounter):
+    """Rock Paper Scissors Lizard Spock against the Red Wizard.
+
+    A draw replays the round. Player win -> CONTINUE, wizard win -> END.
+    """
+
+    wizard_name = "Red Wizard"
+
+    # Each move maps to the moves it beats
+    game_rules = {
+        "rock": ["scissors", "lizard"],
+        "paper": ["rock", "spock"],
+        "scissors": ["paper", "lizard"],
+        "lizard": ["spock", "paper"],
+        "spock": ["rock", "scissors"],
+    }
+
+    # (winner, loser) -> how the winner beats the loser
+    win_verbs = {
+        ("scissors", "lizard"): "decapitate",
+        ("scissors", "paper"): "cuts",
+        ("paper", "rock"): "covers",
+        ("rock", "lizard"): "crushes",
+        ("lizard", "spock"): "poisons",
+        ("spock", "scissors"): "smashes",
+        ("lizard", "paper"): "eats",
+        ("paper", "spock"): "disproves",
+        ("spock", "rock"): "vaporizes",
+        ("rock", "scissors"): "crushes",
+    }
+
+    def get_player_move(self):
+        """Show the moves and return a valid one (number or name, any case)."""
+        moves = list(self.game_rules)
+        print("\nChoose your move:")
+        for number, move in enumerate(moves, start=1):
+            print(f"  {number}. {move.title()}")
+
+        while True:
+            text = input(f"Your move (1-{len(moves)} or name): ").strip().lower()
+            if text.isdigit() and 1 <= int(text) <= len(moves):
+                return moves[int(text) - 1]
+            if text in self.game_rules:
+                return text
+            print(f"  '{text}' is not a valid move. Try again.")
+
+    def describe_win(self, winner, loser):
+        """Return a line like 'Paper covers Rock'."""
+        verb = self.win_verbs.get((winner, loser), "beats")
+        return f"{winner.title()} {verb} {loser.title()}"
+
+    def run_encounter(self):
+        print(f"The {self.wizard_name} blocks your path and challenges you!")
+        while True:
+            player_move = self.get_player_move()
+            wizard_move = random.choice(list(self.game_rules))
+            print(f"\n  You:  {player_move.title()}")
+            print(f"  {self.wizard_name}: {wizard_move.title()}")
+
+            if player_move == wizard_move:
+                # Draw: loop back and play the round again
+                print("  A draw! The duel continues...")
+                continue
+
+            if wizard_move in self.game_rules[player_move]:
+                # The player's move beats the wizard's move
+                print(f"  {self.describe_win(player_move, wizard_move)}.")
+                print(f"\nThe {self.wizard_name} has been vanquished from this castle!")
+                return EncounterOutcome.CONTINUE
+
+            # Otherwise the wizard's move beats the player's move
+            print(f"  {self.describe_win(wizard_move, player_move)}.")
+            print("\nYou have been vanquished from this castle!")
+            return EncounterOutcome.END
+
+
 # ---------------------------------------------------------------------------
 # Rooms and castle
 # ---------------------------------------------------------------------------
@@ -162,6 +247,8 @@ rooms = [
     Room("Dungeon", DefaultEncounter()),
     Room("Observatory", DefaultEncounter()),
     Room("Royal Chamber", DefaultEncounter()),
+    Room("Treasure Room", TreasureEncounter()),
+    Room("The Red Wizard's Lair", RedWizardEncounter()),
 ]
 
 
