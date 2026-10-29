@@ -148,38 +148,18 @@ class TreasureEncounter(Encounter):
         return EncounterOutcome.END
 
 
-class RedWizardEncounter(Encounter):
-    """A spell battle against the Red Wizard.
+class SpellBattleEncounter(Encounter):
+    """Shared logic for a spell battle against a wizard.
 
-    Each spell beats two others and loses to two. A draw replays the round.
+    Subclasses only set `wizard_name`, `game_rules` and `win_verbs`.
+    A draw replays the round.
     Player wins -> the wizard is vanquished and the game CONTINUEs.
     Wizard wins -> the player is vanquished and the game ENDs.
     """
 
-    wizard_name = "Red Wizard"
-
-    # Each spell maps to the spells it beats
-    game_rules = {
-        "Fireball": ["Ice Shard", "Lightning Bolt"],
-        "Ice Shard": ["Wind Gust", "Earthquake"],
-        "Wind Gust": ["Lightning Bolt", "Fireball"],
-        "Lightning Bolt": ["Earthquake", "Ice Shard"],
-        "Earthquake": ["Fireball", "Wind Gust"],
-    }
-
-    # (winning spell, losing spell) -> how the winner overpowers the loser
-    win_verbs = {
-        ("Fireball", "Ice Shard"): "melts",
-        ("Fireball", "Lightning Bolt"): "consumes",
-        ("Ice Shard", "Wind Gust"): "freezes",
-        ("Ice Shard", "Earthquake"): "seals the cracks of",
-        ("Wind Gust", "Lightning Bolt"): "scatters",
-        ("Wind Gust", "Fireball"): "snuffs out",
-        ("Lightning Bolt", "Earthquake"): "splits",
-        ("Lightning Bolt", "Ice Shard"): "shatters",
-        ("Earthquake", "Fireball"): "buries",
-        ("Earthquake", "Wind Gust"): "grounds",
-    }
+    wizard_name = "Wizard"
+    game_rules = {}  # spell -> list of spells it beats
+    win_verbs = {}   # (winning spell, losing spell) -> verb
 
     def get_player_spell(self):
         """Show the spells and return a valid one (number or name, any case)."""
@@ -237,6 +217,51 @@ class RedWizardEncounter(Encounter):
             return EncounterOutcome.END
 
 
+class RedWizardEncounter(SpellBattleEncounter):
+    """Five-spell battle (Rock Paper Scissors Lizard Spock rules)."""
+
+    wizard_name = "Red Wizard"
+
+    game_rules = {
+        "Fireball": ["Ice Shard", "Lightning Bolt"],
+        "Ice Shard": ["Wind Gust", "Earthquake"],
+        "Wind Gust": ["Lightning Bolt", "Fireball"],
+        "Lightning Bolt": ["Earthquake", "Ice Shard"],
+        "Earthquake": ["Fireball", "Wind Gust"],
+    }
+
+    win_verbs = {
+        ("Fireball", "Ice Shard"): "melts",
+        ("Fireball", "Lightning Bolt"): "consumes",
+        ("Ice Shard", "Wind Gust"): "freezes",
+        ("Ice Shard", "Earthquake"): "seals the cracks of",
+        ("Wind Gust", "Lightning Bolt"): "scatters",
+        ("Wind Gust", "Fireball"): "snuffs out",
+        ("Lightning Bolt", "Earthquake"): "splits",
+        ("Lightning Bolt", "Ice Shard"): "shatters",
+        ("Earthquake", "Fireball"): "buries",
+        ("Earthquake", "Wind Gust"): "grounds",
+    }
+
+
+class BlueWizardEncounter(SpellBattleEncounter):
+    """Three-option battle using Rock Paper Scissors rules."""
+
+    wizard_name = "Blue Wizard"
+
+    game_rules = {
+        "Rock": ["Scissors"],
+        "Paper": ["Rock"],
+        "Scissors": ["Paper"],
+    }
+
+    win_verbs = {
+        ("Scissors", "Paper"): "cuts",
+        ("Paper", "Rock"): "covers",
+        ("Rock", "Scissors"): "crushes",
+    }
+
+
 # ---------------------------------------------------------------------------
 # Rooms and castle
 # ---------------------------------------------------------------------------
@@ -262,6 +287,7 @@ rooms = [
     Room("Royal Chamber", DefaultEncounter()),
     Room("Treasure Room", TreasureEncounter()),
     Room("The Red Wizard's Lair", RedWizardEncounter()),
+    Room("The Blue Wizard's Lair", BlueWizardEncounter()),
 ]
 
 
